@@ -4,94 +4,187 @@
  * loading states, error handling, and empty state handling.
  * Supports filtering by category and search query.
  */
-import React, { useState, useEffect, useCallback } from 'react'
-import { ALL_RECIPES } from './RecipeDetail'
+import React, { useState, useEffect } from 'react';
+import { ALL_RECIPES } from './RecipeDetail';
 
-const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Desserts']
-const TAGS = ['All', 'Vegetarian', 'Vegan', 'High-Protein', 'Gluten-Free', 'Low-Carb', 'Seafood', 'Spicy', 'Quick', 'Mediterranean']
+const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Desserts'];
+const TAGS = [
+  'All',
+  'Vegetarian',
+  'Vegan',
+  'High-Protein',
+  'Gluten-Free',
+  'Low-Carb',
+  'Seafood',
+  'Spicy',
+  'Quick',
+  'Mediterranean',
+];
+
+const RAPID_API_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
+
+function normalizeApiRecipe(recipe, index) {
+  const tags = [
+    ...(recipe.tags || []).map(t => t.display_name),
+    recipe.cuisine_type || '',
+  ].filter(Boolean).slice(0, 3)
+
+  return {
+    id: `api-${index}-${recipe.id}`,
+    title: recipe.name || 'Healthy Recipe',
+    description: recipe.description || `A delicious ${recipe.name} recipe.`,
+    image: recipe.thumbnail_url || '',
+    calories: Math.round(recipe.nutrition?.calories || 0),
+    prepTime: recipe.prep_time_minutes ? `${recipe.prep_time_minutes} mins` : recipe.cook_time_minutes ? `${recipe.cook_time_minutes} mins` : '30 mins',
+    cookTime: recipe.cook_time_minutes ? `${recipe.cook_time_minutes} mins` : '',
+    servings: recipe.num_servings || 2,
+    difficulty: recipe.difficulty_level === 1 ? 'Easy' : recipe.difficulty_level === 2 ? 'Medium' : 'Hard',
+    tags: tags.length ? tags : ['Healthy'],
+    category: (recipe.meal_type?.[0] || 'other').toLowerCase(),
+    nutrition: {
+      protein: Math.round(recipe.nutrition?.protein || 0),
+      carbs: Math.round(recipe.nutrition?.carbs || 0),
+      fat: Math.round(recipe.nutrition?.fat || 0),
+      fiber: Math.round(recipe.nutrition?.fiber || 0),
+      sugar: Math.round(recipe.nutrition?.sugar || 0),
+      sodium: Math.round(recipe.nutrition?.sodium || 0),
+    },
+    ingredients: (recipe.sections?.[0]?.components || []).map(c => ({ amount: c.measurements?.[0]?.quantity ? `${c.measurements[0].quantity} ${c.measurements[0].unit?.abbreviation || ''}`.trim() : '', name: c.ingredient?.name || c.raw_text || '' })),
+    instructions: (recipe.instructions || []).map(s => s.display_text).filter(Boolean),
+    sourceUrl: recipe.original_video_url || null,
+  }
+}
 
 function SearchResults({ initialQuery = '', initialCategory = '' }) {
-  const [query, setQuery] = useState(initialQuery)
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'All')
-  const [selectedTag, setSelectedTag] = useState('All')
-  const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState([])
-  const [searched, setSearched] = useState(false)
+  const [query, setQuery] = useState(initialQuery);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'All');
+  const [selectedTag, setSelectedTag] = useState('All');
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]);
+  const [searched, setSearched] = useState(false);
   const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('nutriplate-favorites')
-    return saved ? JSON.parse(saved) : []
-  })
+    const saved = localStorage.getItem('nutriplate-favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [error, setError] = useState('');
+
+  const fetchRecipeApi = async (searchText, category) => {
+    const params = new URLSearchParams({ from: '0', size: '24', q: searchText.trim() || 'healthy' });
+    const response = await fetch(
+      `https://tasty.p.rapidapi.com/recipes/list?${params.toString()}`,
+      {
+        headers: {
+          'x-rapidapi-key': RAPID_API_KEY,
+          'x-rapidapi-host': 'tasty.p.rapidapi.com',
+        },
+      }
+    );
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    let results = (data.results || []).map(normalizeApiRecipe);
+    if (category !== 'All') {
+      results = results.filter(r => r.category === category.toLowerCase() || r.tags.some(t => t.toLowerCase() === category.toLowerCase()));
+    }
+    return results;
+  };
 
   // Debounced search effect
   useEffect(() => {
     if (!query.trim() && selectedCategory === 'All' && selectedTag === 'All') {
-      setResults([])
-      setSearched(false)
-      return
+      setResults([]);
+      setSearched(false);
+      setError('');
+      return;
     }
 
-    setLoading(true)
-    setSearched(true)
-    const timer = setTimeout(() => {
-      let filtered = [...ALL_RECIPES]
+    setLoading(true);
+    setSearched(true);
+    setError('');
 
-      if (query.trim()) {
-        const q = query.toLowerCase()
-        filtered = filtered.filter(r =>
-          r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q) ||
-          r.tags.some(t => t.toLowerCase().includes(q)) ||
-          r.ingredients.some(i => i.name.toLowerCase().includes(q))
-        )
+    const timer = setTimeout(async () => {
+      try {
+        let filtered = [];
+
+        if (RAPID_API_KEY && query.trim()) {
+          filtered = await fetchRecipeApi(query, selectedCategory);
+          if (selectedTag !== 'All') {
+            filtered = filtered.filter(r => r.tags.some(t => t.toLowerCase() === selectedTag.toLowerCase()));
+          }
+        }
+
+        // Fall back to local recipes if API unavailable or no results
+        if (!RAPID_API_KEY || !query.trim() || filtered.length === 0) {
+          let local = [...ALL_RECIPES];
+          if (query.trim()) {
+            const q = query.toLowerCase();
+            local = local.filter(r =>
+              r.title.toLowerCase().includes(q) ||
+              r.description.toLowerCase().includes(q) ||
+              r.tags.some(t => t.toLowerCase().includes(q)) ||
+              r.ingredients.some(i => i.name.toLowerCase().includes(q))
+            );
+          }
+          if (selectedCategory !== 'All') local = local.filter(r => r.category === selectedCategory.toLowerCase());
+          if (selectedTag !== 'All') local = local.filter(r => r.tags.includes(selectedTag));
+          if (!RAPID_API_KEY) setError('API key not configured. Showing local recipes.');
+          filtered = local;
+        }
+
+        if (query.trim() && filtered.length > 1) {
+          filtered.sort((a, b) => {
+            const aMatch = a.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+            const bMatch = b.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
+            return bMatch - aMatch;
+          });
+        }
+
+        setResults(filtered);
+      } catch (err) {
+        setError('Search unavailable. Showing local recipes.');
+        let fallback = [...ALL_RECIPES];
+        if (query.trim()) {
+          const q = query.toLowerCase();
+          fallback = fallback.filter(r =>
+            r.title.toLowerCase().includes(q) ||
+            r.description.toLowerCase().includes(q) ||
+            r.tags.some(t => t.toLowerCase().includes(q))
+          );
+        }
+        if (selectedCategory !== 'All') fallback = fallback.filter(r => r.category === selectedCategory.toLowerCase());
+        setResults(fallback);
+      } finally {
+        setLoading(false);
       }
+    }, 400);
 
-      if (selectedCategory !== 'All') {
-        filtered = filtered.filter(r => r.category === selectedCategory.toLowerCase())
-      }
-
-      if (selectedTag !== 'All') {
-        filtered = filtered.filter(r => r.tags.includes(selectedTag))
-      }
-
-      // Sort by relevance when there's a query
-      if (query.trim()) {
-        filtered.sort((a, b) => {
-          const aMatch = a.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0
-          const bMatch = b.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0
-          return bMatch - aMatch
-        })
-      }
-
-      setResults(filtered)
-      setLoading(false)
-    }, 400)
-
-    return () => clearTimeout(timer)
-  }, [query, selectedCategory, selectedTag])
+    return () => clearTimeout(timer);
+  }, [query, selectedCategory, selectedTag]);
 
   const toggleFavorite = (e, id) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setFavorites(prev => {
-      const updated = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
-      localStorage.setItem('nutriplate-favorites', JSON.stringify(updated))
-      return updated
-    })
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const updated = prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id];
+      localStorage.setItem('nutriplate-favorites', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const clearSearch = () => {
-    setQuery('')
-    setSelectedCategory('All')
-    setSelectedTag('All')
-    setResults([])
-    setSearched(false)
-  }
+    setQuery('');
+    setSelectedCategory('All');
+    setSelectedTag('All');
+    setResults([]);
+    setSearched(false);
+  };
 
   return (
     <section className="search-results" id="search">
       <div className="search-container-large">
         <div className="search-hero">
-          <h2><i className="bi bi-search-heart"></i> Find Your Perfect Recipe</h2>
+          <h2>
+            <i className="bi bi-search-heart"></i> Find Your Perfect Recipe
+          </h2>
           <p>Search hundreds of healthy recipes by name, ingredient, or category.</p>
 
           {/* Search Input */}
@@ -117,7 +210,7 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
           <div className="filter-group">
             <label>Category:</label>
             <div className="filter-pills">
-              {CATEGORIES.map(cat => (
+              {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   className={`filter-pill ${selectedCategory === cat ? 'active' : ''}`}
@@ -132,7 +225,7 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
             <div className="filter-group">
               <label>Dietary:</label>
               <div className="filter-pills">
-                {TAGS.map(tag => (
+                {TAGS.map((tag) => (
                   <button
                     key={tag}
                     className={`filter-pill ${selectedTag === tag ? 'active' : ''}`}
@@ -164,12 +257,19 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
                 <i className="bi bi-search"></i>
               </div>
               <h3>No recipes found</h3>
-              <p>We couldn't find any recipes matching "<strong>{query}</strong>". Try adjusting your search terms or filters.</p>
+              <p>
+                We couldn't find any recipes matching "<strong>{query}</strong>". Try adjusting your
+                search terms or filters.
+              </p>
               <div className="no-results-suggestions">
-                <p><strong>Suggestions:</strong></p>
+                <p>
+                  <strong>Suggestions:</strong>
+                </p>
                 <ul>
                   <li>Check your spelling and try again</li>
-                  <li>Use more general terms (e.g., "chicken" instead of "grilled lemon herb chicken")</li>
+                  <li>
+                    Use more general terms (e.g., "chicken" instead of "grilled lemon herb chicken")
+                  </li>
                   <li>Try selecting different dietary filters</li>
                   <li>Browse our featured recipes below</li>
                 </ul>
@@ -180,45 +280,70 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
             </div>
           ) : results.length > 0 ? (
             <>
+              {error && (
+                <div className="search-error-banner">
+                  <i className="bi bi-exclamation-triangle"></i>
+                  {error}
+                </div>
+              )}
               <div className="results-count">
                 Found <strong>{results.length}</strong> recipe{results.length !== 1 ? 's' : ''}
                 {query && ` matching "${query}"`}
               </div>
               <div className="search-results-grid">
-                {results.map(recipe => (
-                  <a href={`#recipe${recipe.id}`} key={recipe.id} className="search-result-card">
-                    <div className="search-result-image">
-                      <img
-                        src={recipe.image}
-                        alt={recipe.title}
-                        loading="lazy"
-                        onError={(e) => {
-                          e.target.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200"%3E%3Crect width="300" height="200" fill="%234caf50"/%3E%3Ctext x="150" y="105" font-family="Arial" font-size="16" fill="white" text-anchor="middle"%3E${encodeURIComponent(recipe.title)}%3C/text%3E%3C/svg%3E`
-                        }}
-                      />
-                      <button
-                        className={`favorite-btn ${favorites.includes(recipe.id) ? 'favorited' : ''}`}
-                        onClick={(e) => toggleFavorite(e, recipe.id)}
-                      >
-                        <i className={`bi ${favorites.includes(recipe.id) ? 'bi-heart-fill' : 'bi-heart'}`}></i>
-                      </button>
-                    </div>
-                    <div className="search-result-body">
-                      <div className="search-result-tags">
-                        {recipe.tags.slice(0, 2).map(tag => (
-                          <span key={tag} className="result-tag">{tag}</span>
-                        ))}
+                {results.map((recipe) => {
+                  const isExternal = Boolean(recipe.sourceUrl);
+                  return (
+                    <a
+                      href={isExternal ? recipe.sourceUrl : `#recipe${recipe.id}`}
+                      key={recipe.id}
+                      className="search-result-card"
+                      target={isExternal ? '_blank' : '_self'}
+                      rel={isExternal ? 'noreferrer noopener' : undefined}
+                    >
+                      <div className="search-result-image">
+                        <img
+                          src={recipe.image}
+                          alt={recipe.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200"%3E%3Crect width="300" height="200" fill="%234caf50"/%3E%3Ctext x="150" y="105" font-family="Arial" font-size="16" fill="white" text-anchor="middle"%3E${encodeURIComponent(recipe.title)}%3C/text%3E%3C/svg%3E`;
+                          }}
+                        />
+                        <button
+                          className={`favorite-btn ${favorites.includes(recipe.id) ? 'favorited' : ''}`}
+                          onClick={(e) => toggleFavorite(e, recipe.id)}
+                        >
+                          <i
+                            className={`bi ${favorites.includes(recipe.id) ? 'bi-heart-fill' : 'bi-heart'}`}
+                          ></i>
+                        </button>
                       </div>
-                      <h4>{recipe.title}</h4>
-                      <p>{recipe.description}</p>
-                      <div className="search-result-meta">
-                        <span><i className="bi bi-fire"></i> {recipe.calories} kcal</span>
-                        <span><i className="bi bi-clock"></i> {recipe.prepTime}</span>
-                        <span><i className="bi bi-people"></i> {recipe.servings || 2} servings</span>
+                      <div className="search-result-body">
+                        <div className="search-result-tags">
+                          {recipe.tags.slice(0, 2).map((tag) => (
+                            <span key={tag} className="result-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        <h4>{recipe.title}</h4>
+                        <p>{recipe.description}</p>
+                        <div className="search-result-meta">
+                          <span>
+                            <i className="bi bi-fire"></i> {recipe.calories} kcal
+                          </span>
+                          <span>
+                            <i className="bi bi-clock"></i> {recipe.prepTime}
+                          </span>
+                          <span>
+                            <i className="bi bi-people"></i> {recipe.servings || 2} servings
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </a>
-                ))}
+                    </a>
+                  );
+                })}
               </div>
             </>
           ) : !searched ? (
@@ -226,14 +351,17 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
               <div className="prompt-content">
                 <i className="bi bi-compass"></i>
                 <h3>Start Your Search</h3>
-                <p>Enter a recipe name, ingredient, or dietary preference above to discover delicious and healthy meals.</p>
+                <p>
+                  Enter a recipe name, ingredient, or dietary preference above to discover delicious
+                  and healthy meals.
+                </p>
               </div>
             </div>
           ) : null}
         </div>
       </div>
     </section>
-  )
+  );
 }
 
-export default SearchResults
+export default SearchResults;

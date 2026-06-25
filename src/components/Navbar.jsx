@@ -4,33 +4,33 @@
  * Features fixed positioning, backdrop blur glass effect, and active link highlighting.
  * Supports hash-based routing navigation.
  */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 
 function Navbar({ activeSection }) {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     // Close mobile menu when a link is clicked
-    const handleClick = () => setMobileOpen(false)
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [])
+    const handleClick = () => setMobileOpen(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   const navLinks = [
     { href: '#home', label: 'Home', icon: 'bi-house' },
     { href: '#about', label: 'About', icon: 'bi-info-circle' },
     { href: '#recipes', label: 'Recipes', icon: 'bi-book' },
-    { href: '#tracker', label: 'Calorie Tracker', icon: 'bi-calendar-check' },
     { href: '#blog', label: 'Blog', icon: 'bi-journal-text' },
-    { href: '#contact', label: 'Contact', icon: 'bi-envelope' },
-  ]
+    { href: '#tracker', label: 'Calorie Tracker', icon: 'bi-calendar-check' },
+    { href: '#payment', label: 'Premium', icon: 'bi-gem' },
+  ];
 
   return (
     <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
@@ -40,12 +40,14 @@ function Navbar({ activeSection }) {
           <div className="brand-icon">
             <i className="fas fa-leaf"></i>
           </div>
-          <span className="brand-text">Nutri<span className="brand-accent">Plate</span></span>
+          <span className="brand-text">
+            Nutri<span className="brand-accent">Plate</span>
+          </span>
         </a>
 
         {/* Desktop Navigation */}
         <ul className={`nav_links ${mobileOpen ? 'nav-links-open' : ''}`}>
-          {navLinks.map(link => (
+          {navLinks.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
@@ -72,16 +74,27 @@ function Navbar({ activeSection }) {
 
         {/* Right-side icons */}
         <div className="nav-actions">
-          <a href="#search" className="nav-icon-btn search-icon" onClick={(e) => e.stopPropagation()}>
+          <a
+            href="#search"
+            className="nav-icon-btn search-icon"
+            onClick={(e) => e.stopPropagation()}
+          >
             <i className="bi bi-search"></i>
           </a>
-          <a href="#signin" className="nav-icon-btn signin-icon" onClick={(e) => e.stopPropagation()}>
+          <a
+            href="#signin"
+            className="nav-icon-btn signin-icon"
+            onClick={(e) => e.stopPropagation()}
+          >
             <i className="bi bi-person-circle"></i>
           </a>
           {/* Hamburger Toggle */}
           <button
             className={`hamburger ${mobileOpen ? 'hamburger-open' : ''}`}
-            onClick={(e) => { e.stopPropagation(); setMobileOpen(!mobileOpen) }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileOpen(!mobileOpen);
+            }}
             aria-label="Toggle navigation menu"
           >
             <span></span>
@@ -92,9 +105,12 @@ function Navbar({ activeSection }) {
       </div>
 
       {/* Mobile Menu Overlay */}
-      <div className={`mobile-overlay ${mobileOpen ? 'overlay-visible' : ''}`} onClick={() => setMobileOpen(false)}></div>
+      <div
+        className={`mobile-overlay ${mobileOpen ? 'overlay-visible' : ''}`}
+        onClick={() => setMobileOpen(false)}
+      ></div>
     </nav>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;

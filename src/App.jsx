@@ -1,9 +1,3 @@
-/**
- * App Component
- * Main application root with hash-based routing system.
- * Routes: home, about, recipes (with search), recipe detail, calorie tracker, blog, contact, sign in
- * Provides smooth page transitions and scroll-to-top on navigation.
- */
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -23,11 +17,11 @@ import Payment from './components/Payment';
 function App() {
   const [activeSection, setActiveSection] = useState('home');
   const [recipeDetailId, setRecipeDetailId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleHashChange = useCallback(() => {
     const hash = window.location.hash.replace('#', '') || 'home';
 
-    // Check if navigating to a recipe detail page
     const recipeMatch = hash.match(/^recipe(\d+)$/);
     if (recipeMatch) {
       setRecipeDetailId(parseInt(recipeMatch[1]));
@@ -35,7 +29,16 @@ function App() {
       return;
     }
 
-    // Handle forms (search pages embedded within recipes)
+    // Extract search query from hash e.g. #search?q=pasta
+    if (hash.startsWith('search')) {
+      const params = new URLSearchParams(hash.replace('search?', ''));
+      setSearchQuery(params.get('q') || '');
+      setActiveSection('search');
+      setRecipeDetailId(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (hash === 'recipes') {
       setActiveSection('recipes');
       setRecipeDetailId(null);
@@ -44,18 +47,16 @@ function App() {
       setRecipeDetailId(null);
     }
 
-    // Scroll to top on navigation
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
     window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Initial load
+    handleHashChange();
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [handleHashChange]);
 
   const renderSection = () => {
-    // If viewing a recipe detail, render it
     if (activeSection === 'recipe' && recipeDetailId) {
       return (
         <RecipeDetail recipeId={recipeDetailId} onBack={() => (window.location.hash = 'recipes')} />
@@ -76,7 +77,15 @@ function App() {
       case 'recipes':
         return <Recipes />;
       case 'search':
-        return <SearchResults />;
+        return (
+          <SearchResults
+            query={searchQuery}
+            onRecipeClick={(id) => {
+              setRecipeDetailId(id);
+              setActiveSection('recipe');
+            }}
+          />
+        );
       case 'tracker':
         return <CalorieTracker />;
       case 'blog':
@@ -100,7 +109,7 @@ function App() {
 
   return (
     <div className="app">
-      <Navbar activeSection={activeSection} />
+      <Navbar activeSection={activeSection} setSearchQuery={setSearchQuery} />
       <main className="main-content">{renderSection()}</main>
       {activeSection !== 'recipe' && <Footer />}
     </div>

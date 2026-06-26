@@ -11,7 +11,7 @@ const blogPosts = [
     title: '5 Superfoods to Boost Your Immunity',
     description:
       'Discover the top superfoods that can help strengthen your immune system and keep you healthy year-round.',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80', // Superfoods
+    image: 'https://unsplash.com/photos/red-bell-pepper-beside-green-vegetable-xiTyqLs0oIs', // Superfoods
     date: 'June 15, 2024',
     readTime: '5 min read',
     category: 'Health',
@@ -25,7 +25,7 @@ const blogPosts = [
     title: 'Meal Planning Tips for Busy Professionals',
     description:
       'Learn how to efficiently plan your meals and maintain a balanced diet even with a hectic schedule.',
-    image: 'https://images.unsplash.com/photo-1504674900947-acb8c46a77d8?w=800&q=80', // Meal Planning
+    image: 'https://unsplash.com/photos/healthy-food-concept-wooden-cutting-board-surrounded-by-fresh-vegetables-groats-leafy-greens-and-quail-eggs-on-white-wooden-concept-with-blank-space-for-text-top-view-flat-lay-1n1apSL711w', // Meal Planning
     date: 'June 10, 2024',
     readTime: '7 min read',
     category: 'Lifestyle',
@@ -39,7 +39,7 @@ const blogPosts = [
     title: 'The Benefits of Mindful Eating',
     description:
       'Explore the concept of mindful eating and how it can improve your relationship with food and overall health.',
-    image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80', // Mindful Eating
+    image: 'https://unsplash.com/photos/assorted-fruits-and-vegetables-on-green-surface-kcRFW-Hje8Y', // Mindful Eating
     date: 'June 5, 2024',
     readTime: '6 min read',
     category: 'Wellness',
@@ -52,7 +52,7 @@ const blogPosts = [
     id: 4,
     title: '10 High-Protein Breakfast Ideas',
     description: 'Kickstart your morning with these delicious protein-rich breakfast recipes.',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80', // Breakfast
+    image: 'https://unsplash.com/photos/fried-ham-egg-bread-with-beans-and-red-tomato-slice-W3cKs5KeT2c', // Breakfast
     date: 'May 28, 2024',
     readTime: '5 min read',
     category: 'Recipes',
@@ -66,7 +66,7 @@ const blogPosts = [
     title: 'Understanding Macronutrients: A Beginner Guide',
     description:
       'Learn the basics of proteins, carbs, and fats and how to balance them for optimal health.',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80', // Macronutrients
+    image: 'https://unsplash.com/photos/yellow-banana-red-apple-and-yellow-banana-fruit-AMNvyr5RH-c', // Macronutrients
     date: 'May 20, 2024',
     readTime: '8 min read',
     category: 'Health',
@@ -79,7 +79,7 @@ const blogPosts = [
     id: 6,
     title: 'The Benefits of a Plant-Based Diet',
     description: 'Why more people are switching to plant-based eating and how you can start today.',
-    image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80', // Plant-Based
+    image: 'https://unsplash.com/photos/a-close-up-of-a-bunch-of-green-leafy-vegetables-3maBO1euVZE', // Plant-Based
     date: 'May 15, 2024',
     readTime: '6 min read',
     category: 'Lifestyle',

@@ -1,14 +1,7 @@
-/**
- * SearchResults Component
- * Provides recipe search functionality with debounced API calls,
- * loading states, error handling, and empty state handling.
- * Supports filtering by category and search query.
- */
 import React, { useState, useEffect } from 'react';
 import { ALL_RECIPES } from './RecipeDetail';
 
-const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Desserts'];
-const TAGS = [
+const DIETARY_TAGS = [
   'All',
   'Vegetarian',
   'Vegan',
@@ -17,148 +10,39 @@ const TAGS = [
   'Low-Carb',
   'Seafood',
   'Spicy',
-  'Quick',
-  'Mediterranean',
 ];
 
-const RAPID_API_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-
-function normalizeApiRecipe(recipe, index) {
-  const tags = [
-    ...(recipe.tags || []).map(t => t.display_name),
-    recipe.cuisine_type || '',
-  ].filter(Boolean).slice(0, 3)
-
-  return {
-    id: `api-${index}-${recipe.id}`,
-    title: recipe.name || 'Healthy Recipe',
-    description: recipe.description || `A delicious ${recipe.name} recipe.`,
-    image: recipe.thumbnail_url || '',
-    calories: Math.round(recipe.nutrition?.calories || 0),
-    prepTime: recipe.prep_time_minutes ? `${recipe.prep_time_minutes} mins` : recipe.cook_time_minutes ? `${recipe.cook_time_minutes} mins` : '30 mins',
-    cookTime: recipe.cook_time_minutes ? `${recipe.cook_time_minutes} mins` : '',
-    servings: recipe.num_servings || 2,
-    difficulty: recipe.difficulty_level === 1 ? 'Easy' : recipe.difficulty_level === 2 ? 'Medium' : 'Hard',
-    tags: tags.length ? tags : ['Healthy'],
-    category: (recipe.meal_type?.[0] || 'other').toLowerCase(),
-    nutrition: {
-      protein: Math.round(recipe.nutrition?.protein || 0),
-      carbs: Math.round(recipe.nutrition?.carbs || 0),
-      fat: Math.round(recipe.nutrition?.fat || 0),
-      fiber: Math.round(recipe.nutrition?.fiber || 0),
-      sugar: Math.round(recipe.nutrition?.sugar || 0),
-      sodium: Math.round(recipe.nutrition?.sodium || 0),
-    },
-    ingredients: (recipe.sections?.[0]?.components || []).map(c => ({ amount: c.measurements?.[0]?.quantity ? `${c.measurements[0].quantity} ${c.measurements[0].unit?.abbreviation || ''}`.trim() : '', name: c.ingredient?.name || c.raw_text || '' })),
-    instructions: (recipe.instructions || []).map(s => s.display_text).filter(Boolean),
-    sourceUrl: recipe.original_video_url || null,
-  }
-}
-
-function SearchResults({ initialQuery = '', initialCategory = '' }) {
-  const [query, setQuery] = useState(initialQuery);
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'All');
-  const [selectedTag, setSelectedTag] = useState('All');
-  const [loading, setLoading] = useState(false);
+function SearchResults({ query, onRecipeClick }) {
   const [results, setResults] = useState([]);
-  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeTag, setActiveTag] = useState('All');
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('nutriplate-favorites');
     return saved ? JSON.parse(saved) : [];
   });
-  const [error, setError] = useState('');
 
-  const fetchRecipeApi = async (searchText, category) => {
-    const params = new URLSearchParams({ from: '0', size: '24', q: searchText.trim() || 'healthy' });
-    const response = await fetch(
-      `https://tasty.p.rapidapi.com/recipes/list?${params.toString()}`,
-      {
-        headers: {
-          'x-rapidapi-key': RAPID_API_KEY,
-          'x-rapidapi-host': 'tasty.p.rapidapi.com',
-        },
-      }
-    );
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    const data = await response.json();
-    let results = (data.results || []).map(normalizeApiRecipe);
-    if (category !== 'All') {
-      results = results.filter(r => r.category === category.toLowerCase() || r.tags.some(t => t.toLowerCase() === category.toLowerCase()));
-    }
-    return results;
-  };
-
-  // Debounced search effect
   useEffect(() => {
-    if (!query.trim() && selectedCategory === 'All' && selectedTag === 'All') {
+    if (!query || query.trim() === '') {
       setResults([]);
-      setSearched(false);
-      setError('');
       return;
     }
-
     setLoading(true);
-    setSearched(true);
-    setError('');
-
-    const timer = setTimeout(async () => {
-      try {
-        let filtered = [];
-
-        if (RAPID_API_KEY && query.trim()) {
-          filtered = await fetchRecipeApi(query, selectedCategory);
-          if (selectedTag !== 'All') {
-            filtered = filtered.filter(r => r.tags.some(t => t.toLowerCase() === selectedTag.toLowerCase()));
-          }
-        }
-
-        // Fall back to local recipes if API unavailable or no results
-        if (!RAPID_API_KEY || !query.trim() || filtered.length === 0) {
-          let local = [...ALL_RECIPES];
-          if (query.trim()) {
-            const q = query.toLowerCase();
-            local = local.filter(r =>
-              r.title.toLowerCase().includes(q) ||
-              r.description.toLowerCase().includes(q) ||
-              r.tags.some(t => t.toLowerCase().includes(q)) ||
-              r.ingredients.some(i => i.name.toLowerCase().includes(q))
-            );
-          }
-          if (selectedCategory !== 'All') local = local.filter(r => r.category === selectedCategory.toLowerCase());
-          if (selectedTag !== 'All') local = local.filter(r => r.tags.includes(selectedTag));
-          if (!RAPID_API_KEY) setError('API key not configured. Showing local recipes.');
-          filtered = local;
-        }
-
-        if (query.trim() && filtered.length > 1) {
-          filtered.sort((a, b) => {
-            const aMatch = a.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
-            const bMatch = b.title.toLowerCase().includes(query.toLowerCase()) ? 1 : 0;
-            return bMatch - aMatch;
-          });
-        }
-
-        setResults(filtered);
-      } catch (err) {
-        setError('Search unavailable. Showing local recipes.');
-        let fallback = [...ALL_RECIPES];
-        if (query.trim()) {
-          const q = query.toLowerCase();
-          fallback = fallback.filter(r =>
-            r.title.toLowerCase().includes(q) ||
-            r.description.toLowerCase().includes(q) ||
-            r.tags.some(t => t.toLowerCase().includes(q))
-          );
-        }
-        if (selectedCategory !== 'All') fallback = fallback.filter(r => r.category === selectedCategory.toLowerCase());
-        setResults(fallback);
-      } finally {
-        setLoading(false);
-      }
+    setActiveTag('All');
+    const timer = setTimeout(() => {
+      const q = query.toLowerCase();
+      const filtered = ALL_RECIPES.filter(
+        (recipe) =>
+          recipe.title.toLowerCase().includes(q) ||
+          recipe.description.toLowerCase().includes(q) ||
+          recipe.category.toLowerCase().includes(q) ||
+          recipe.tags.some((t) => t.toLowerCase().includes(q)) ||
+          recipe.ingredients.some((i) => i.name.toLowerCase().includes(q))
+      );
+      setResults(filtered);
+      setLoading(false);
     }, 400);
-
     return () => clearTimeout(timer);
-  }, [query, selectedCategory, selectedTag]);
+  }, [query]);
 
   const toggleFavorite = (e, id) => {
     e.preventDefault();
@@ -170,144 +54,118 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
     });
   };
 
-  const clearSearch = () => {
-    setQuery('');
-    setSelectedCategory('All');
-    setSelectedTag('All');
-    setResults([]);
-    setSearched(false);
-  };
+  const filteredByTag =
+    activeTag === 'All' ? results : results.filter((r) => r.tags.includes(activeTag));
 
-  return (
-    <section className="search-results" id="search">
-      <div className="search-container-large">
-        <div className="search-hero">
-          <h2>
-            <i className="bi bi-search-heart"></i> Find Your Perfect Recipe
-          </h2>
-          <p>Search hundreds of healthy recipes by name, ingredient, or category.</p>
-
-          {/* Search Input */}
-          <div className="search-bar-large">
+  if (!query || query.trim() === '') {
+    return (
+      <section className="recipes-page" id="search-results">
+        <div className="recipes-container">
+          <div className="no-results-inline">
             <i className="bi bi-search"></i>
-            <input
-              type="text"
-              placeholder="Search recipes, ingredients, cuisines..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-            />
-            {query && (
-              <button className="search-clear" onClick={() => setQuery('')}>
-                <i className="bi bi-x-circle-fill"></i>
-              </button>
-            )}
+            <h3>Start typing to search</h3>
+            <p>Search by recipe name, ingredient, category, or dietary tag.</p>
           </div>
         </div>
+      </section>
+    );
+  }
 
-        {/* Filters */}
-        <div className="search-filters">
-          <div className="filter-group">
-            <label>Category:</label>
-            <div className="filter-pills">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  className={`filter-pill ${selectedCategory === cat ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+  if (loading) {
+    return (
+      <section className="recipes-page" id="search-results">
+        <div className="recipes-container">
+          <div className="recipes-loading">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="recipe-card skeleton-card">
+                <div className="skeleton skeleton-image"></div>
+                <div className="skeleton skeleton-title"></div>
+                <div className="skeleton skeleton-text"></div>
+                <div className="skeleton skeleton-meta"></div>
+              </div>
+            ))}
           </div>
-          {searched && (
-            <div className="filter-group">
-              <label>Dietary:</label>
-              <div className="filter-pills">
-                {TAGS.map((tag) => (
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="recipes-page" id="search-results">
+      <div className="recipes-container">
+        <div className="section-header">
+          <div className="section-icon-circle">
+            <i className="bi bi-search"></i>
+          </div>
+          <h2>Search Results</h2>
+          <p>
+            {results.length > 0
+              ? `Found ${results.length} recipe${results.length !== 1 ? 's' : ''} for "${query}"`
+              : `No recipes found for "${query}"`}
+          </p>
+        </div>
+
+        {results.length === 0 ? (
+          <div className="no-results-inline">
+            <i className="bi bi-journal-x"></i>
+            <h3>No recipes found</h3>
+            <p>
+              Try searching for an ingredient, category like "breakfast", or a tag like "vegan".
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="filter-section">
+              <div className="filter-label">
+                <i className="bi bi-tag"></i> Filter by diet:
+              </div>
+              <div className="filter-pills-scroll">
+                {DIETARY_TAGS.map((tag) => (
                   <button
                     key={tag}
-                    className={`filter-pill ${selectedTag === tag ? 'active' : ''}`}
-                    onClick={() => setSelectedTag(tag)}
+                    className={`filter-pill ${activeTag === tag ? 'active' : ''}`}
+                    onClick={() => setActiveTag(tag)}
                   >
                     {tag}
                   </button>
                 ))}
               </div>
             </div>
-          )}
-          {(query || selectedCategory !== 'All' || selectedTag !== 'All') && (
-            <button className="clear-filters-btn" onClick={clearSearch}>
-              <i className="bi bi-x-lg"></i> Clear All Filters
-            </button>
-          )}
-        </div>
 
-        {/* Results */}
-        <div className="search-results-area">
-          {loading ? (
-            <div className="loading-results">
-              <div className="loading-spinner"></div>
-              <p>Searching recipes...</p>
-            </div>
-          ) : searched && results.length === 0 ? (
-            <div className="no-results">
-              <div className="no-results-icon">
-                <i className="bi bi-search"></i>
-              </div>
-              <h3>No recipes found</h3>
-              <p>
-                We couldn't find any recipes matching "<strong>{query}</strong>". Try adjusting your
-                search terms or filters.
-              </p>
-              <div className="no-results-suggestions">
-                <p>
-                  <strong>Suggestions:</strong>
-                </p>
-                <ul>
-                  <li>Check your spelling and try again</li>
-                  <li>
-                    Use more general terms (e.g., "chicken" instead of "grilled lemon herb chicken")
-                  </li>
-                  <li>Try selecting different dietary filters</li>
-                  <li>Browse our featured recipes below</li>
-                </ul>
-              </div>
-              <button className="btn-browse-all" onClick={clearSearch}>
-                Browse All Recipes
-              </button>
-            </div>
-          ) : results.length > 0 ? (
-            <>
-              {error && (
-                <div className="search-error-banner">
-                  <i className="bi bi-exclamation-triangle"></i>
-                  {error}
-                </div>
+            <div className="results-info">
+              <span>
+                Showing <strong>{filteredByTag.length}</strong> of {results.length} results
+              </span>
+              {activeTag !== 'All' && (
+                <button className="btn-clear-filter" onClick={() => setActiveTag('All')}>
+                  <i className="bi bi-x"></i> Clear filter
+                </button>
               )}
-              <div className="results-count">
-                Found <strong>{results.length}</strong> recipe{results.length !== 1 ? 's' : ''}
-                {query && ` matching "${query}"`}
+            </div>
+
+            {filteredByTag.length === 0 ? (
+              <div className="no-results-inline">
+                <i className="bi bi-funnel"></i>
+                <h3>No matches for this filter</h3>
+                <p>Try a different dietary tag or clear the filter.</p>
               </div>
-              <div className="search-results-grid">
-                {results.map((recipe) => {
-                  const isExternal = Boolean(recipe.sourceUrl);
-                  return (
-                    <a
-                      href={isExternal ? recipe.sourceUrl : `#recipe${recipe.id}`}
-                      key={recipe.id}
-                      className="search-result-card"
-                      target={isExternal ? '_blank' : '_self'}
-                      rel={isExternal ? 'noreferrer noopener' : undefined}
-                    >
-                      <div className="search-result-image">
+            ) : (
+              <div className="recipes-grid">
+                {filteredByTag.map((recipe) => (
+                  <a
+                    href={`#recipe${recipe.id}`}
+                    key={recipe.id}
+                    className="recipe-card-link"
+                    onClick={() => onRecipeClick && onRecipeClick(recipe.id)}
+                  >
+                    <div className="recipe-card">
+                      <div className="recipe-image-container">
                         <img
                           src={recipe.image}
                           alt={recipe.title}
                           loading="lazy"
                           onError={(e) => {
-                            e.target.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200"%3E%3Crect width="300" height="200" fill="%234caf50"/%3E%3Ctext x="150" y="105" font-family="Arial" font-size="16" fill="white" text-anchor="middle"%3E${encodeURIComponent(recipe.title)}%3C/text%3E%3C/svg%3E`;
+                            e.target.src = `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect width="400" height="300" fill="%234caf50"/%3E%3Ctext x="200" y="160" font-family="Arial" font-size="20" fill="white" text-anchor="middle"%3E${encodeURIComponent(recipe.title)}%3C/text%3E%3C/svg%3E`;
                           }}
                         />
                         <button
@@ -318,47 +176,49 @@ function SearchResults({ initialQuery = '', initialCategory = '' }) {
                             className={`bi ${favorites.includes(recipe.id) ? 'bi-heart-fill' : 'bi-heart'}`}
                           ></i>
                         </button>
+                        <div className="recipe-card-overlay">
+                          <span className="view-label">
+                            <i className="bi bi-eye"></i> View Recipe
+                          </span>
+                        </div>
                       </div>
-                      <div className="search-result-body">
-                        <div className="search-result-tags">
+                      <div className="recipe-card-body">
+                        <div className="recipe-card-tags">
                           {recipe.tags.slice(0, 2).map((tag) => (
-                            <span key={tag} className="result-tag">
+                            <span key={tag} className="tag">
                               {tag}
                             </span>
                           ))}
+                          <span className="recipe-category-badge">{recipe.category}</span>
                         </div>
-                        <h4>{recipe.title}</h4>
-                        <p>{recipe.description}</p>
-                        <div className="search-result-meta">
-                          <span>
-                            <i className="bi bi-fire"></i> {recipe.calories} kcal
-                          </span>
-                          <span>
-                            <i className="bi bi-clock"></i> {recipe.prepTime}
-                          </span>
-                          <span>
-                            <i className="bi bi-people"></i> {recipe.servings || 2} servings
-                          </span>
+                        <h3 className="recipe-card-title">{recipe.title}</h3>
+                        <p className="recipe-card-desc">{recipe.description}</p>
+                        <div className="recipe-card-footer">
+                          <div className="recipe-card-meta">
+                            <span>
+                              <i className="bi bi-fire"></i> {recipe.calories} kcal
+                            </span>
+                            <span>
+                              <i className="bi bi-clock"></i> {recipe.prepTime}
+                            </span>
+                            <span>
+                              <i className="bi bi-people"></i> {recipe.servings || 2}
+                            </span>
+                          </div>
+                          <div className="macro-mini">
+                            <span title="Protein">P: {recipe.nutrition?.protein || 0}g</span>
+                            <span title="Carbs">C: {recipe.nutrition?.carbs || 0}g</span>
+                            <span title="Fat">F: {recipe.nutrition?.fat || 0}g</span>
+                          </div>
                         </div>
                       </div>
-                    </a>
-                  );
-                })}
+                    </div>
+                  </a>
+                ))}
               </div>
-            </>
-          ) : !searched ? (
-            <div className="search-prompt">
-              <div className="prompt-content">
-                <i className="bi bi-compass"></i>
-                <h3>Start Your Search</h3>
-                <p>
-                  Enter a recipe name, ingredient, or dietary preference above to discover delicious
-                  and healthy meals.
-                </p>
-              </div>
-            </div>
-          ) : null}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

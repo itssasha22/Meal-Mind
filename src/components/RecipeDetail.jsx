@@ -11,7 +11,7 @@ const ALL_RECIPES = [
     id: 1,
     title: 'Quinoa Salad with Avocado',
     description: 'A refreshing and nutritious salad packed with protein and healthy fats.',
-    image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800&q=80', // Quinoa Salad
+    image: 'https://unsplash.com/photos/a-bowl-filled-with-rice-vegetables-and-fruit-BhKwOpXmS68', // Quinoa Salad
     calories: 350,
     prepTime: '15 mins',
     cookTime: '10 mins',
@@ -45,7 +45,7 @@ const ALL_RECIPES = [
     title: 'Grilled Chicken with Roasted Vegetables',
     description:
       'A simple yet flavorful dish that combines lean protein with fresh seasonal vegetables.',
-    image: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=800&q=80', // Grilled Chicken
+    image: 'https://unsplash.com/photos/a-plate-of-food-5lFfglgMaao', // Grilled Chicken
     calories: 420,
     prepTime: '15 mins',
     cookTime: '30 mins',
@@ -80,7 +80,7 @@ const ALL_RECIPES = [
     title: 'Blueberry Smoothie Bowl',
     description:
       'A vibrant and antioxidant-rich smoothie bowl, perfect for a quick and healthy breakfast.',
-    image: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=800&q=80', // Smoothie Bowl
+    image: 'https://unsplash.com/photos/acai-bowl-filled-with-good-antioxidants-KTs6Ycbdeww', // Smoothie Bowl
     calories: 280,
     prepTime: '10 mins',
     cookTime: '0 mins',
@@ -113,7 +113,7 @@ const ALL_RECIPES = [
     id: 4,
     title: 'Mediterranean Pasta Salad',
     description: 'A colorful pasta salad bursting with Mediterranean flavors and fresh vegetables.',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80', // Salmon Pasta
+    image: 'https://unsplash.com/photos/a-white-bowl-filled-with-pasta-and-vegetables-VBZDsO3Zctg', // Mediterranean Pasta Salad
     calories: 380,
     prepTime: '20 mins',
     cookTime: '10 mins',
@@ -147,7 +147,7 @@ const ALL_RECIPES = [
     title: 'Banana Protein Pancakes',
     description:
       'Fluffy protein-packed pancakes that taste indulgent but fit perfectly into your fitness routine.',
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80', // Buddha Bowl
+    image: 'https://unsplash.com/photos/brown-pancakes-on-white-ceramic-plate-g83Q5Ieyax0', // Buddha Bowl
     calories: 310,
     prepTime: '10 mins',
     cookTime: '15 mins',
@@ -180,7 +180,7 @@ const ALL_RECIPES = [
     title: 'Spicy Thai Curry with Tofu',
     description:
       'A bold and aromatic Thai curry with crispy tofu and colorful vegetables in a rich coconut sauce.',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80', // Protein Wrap
+    image: 'https://unsplash.com/photos/green-vegetable-on-white-ceramic-plate-PqsImnjuElM', // Protein Wrap
     calories: 390,
     prepTime: '15 mins',
     cookTime: '25 mins',
@@ -215,7 +215,7 @@ const ALL_RECIPES = [
     title: 'Caesar Salad with Grilled Shrimp',
     description:
       'A lighter, protein-rich twist on the classic Caesar salad with succulent grilled shrimp.',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80', // Green Smoothie
+    image: 'https://unsplash.com/photos/cooked-shrimp-dish-w_z0RJCSBiE', // Green Smoothie
     calories: 340,
     prepTime: '15 mins',
     cookTime: '8 mins',
@@ -249,7 +249,8 @@ const ALL_RECIPES = [
     title: 'Overnight Chia Pudding',
     description:
       "A creamy, make-ahead breakfast pudding that's rich in omega-3s and perfect for busy mornings.",
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80', // Vegetable Stir Fry
+    image:
+      'https://unsplash.com/photos/a-bowl-filled-with-fruit-and-nuts-on-top-of-a-table-qBq2bc5iLyQ', // Overnight Chia Pudding
     calories: 240,
     prepTime: '5 mins',
     cookTime: '0 mins',
@@ -280,8 +281,9 @@ const ALL_RECIPES = [
   {
     id: 9,
     title: 'Honey Roasted Mixed Nuts',
-    description: 'Crunchy, sweet, and salty roasted mixed nuts glazed with honey and warm spices — the perfect grab-and-go snack.',
-    image: '/images/snack1.jpg',
+    description:
+      'Crunchy, sweet, and salty roasted mixed nuts glazed with honey and warm spices — the perfect grab-and-go snack.',
+    image: 'https://unsplash.com/photos/a-mixture-of-nuts-and-raisins-on-a-plate-IUDpDbax7gQ',
     calories: 210,
     prepTime: '5 mins',
     cookTime: '15 mins',
@@ -311,8 +313,9 @@ const ALL_RECIPES = [
   {
     id: 10,
     title: 'Avocado & Veggie Rice Cakes',
-    description: 'Light and satisfying rice cakes topped with creamy avocado, cherry tomatoes, and everything bagel seasoning.',
-    image: '/images/snack2.jpg',
+    description:
+      'Light and satisfying rice cakes topped with creamy avocado, cherry tomatoes, and everything bagel seasoning.',
+    image: 'https://unsplash.com/photos/sushi-on-white-ceramic-rectangular-plate-i4jrjvPQCXQ',
     calories: 180,
     prepTime: '8 mins',
     cookTime: '0 mins',
@@ -342,8 +345,9 @@ const ALL_RECIPES = [
   {
     id: 11,
     title: 'Greek Yogurt Parfait with Granola',
-    description: 'Creamy Greek yogurt layered with crunchy granola, fresh berries, and a drizzle of honey — ready in minutes.',
-    image: '/images/snack3.jpg',
+    description:
+      'Creamy Greek yogurt layered with crunchy granola, fresh berries, and a drizzle of honey — ready in minutes.',
+    image: 'https://unsplash.com/photos/black-round-plate-with-red-and-white-berries-3Lsgd54dxRI',
     calories: 260,
     prepTime: '5 mins',
     cookTime: '0 mins',
@@ -374,8 +378,10 @@ const ALL_RECIPES = [
   {
     id: 12,
     title: 'Chocolate Lava Cake',
-    description: 'Indulgent individual chocolate cakes with a warm, gooey molten center — pure dessert perfection in under 20 minutes.',
-    image: '/images/dessert1.jpg',
+    description:
+      'Indulgent individual chocolate cakes with a warm, gooey molten center — pure dessert perfection in under 20 minutes.',
+    image:
+      'https://unsplash.com/photos/a-white-plate-topped-with-a-piece-of-cake-and-ice-cream-PFG4JCWomIM',
     calories: 420,
     prepTime: '10 mins',
     cookTime: '12 mins',
@@ -409,8 +415,10 @@ const ALL_RECIPES = [
   {
     id: 13,
     title: 'Strawberry Cheesecake Bites',
-    description: 'No-bake mini cheesecake bites with a buttery graham cracker base, creamy filling, and a fresh strawberry on top.',
-    image: '/images/dessert2.jpg',
+    description:
+      'No-bake mini cheesecake bites with a buttery graham cracker base, creamy filling, and a fresh strawberry on top.',
+    image:
+      'https://unsplash.com/photos/delicious-cheesecake-slices-are-artfully-arranged-a1MLZOERzzk',
     calories: 180,
     prepTime: '20 mins',
     cookTime: '0 mins',
@@ -442,8 +450,9 @@ const ALL_RECIPES = [
   {
     id: 14,
     title: 'Mango Coconut Panna Cotta',
-    description: 'A silky smooth dessert made with coconut milk and topped with a vibrant fresh mango coulis.',
-    image: '/images/dessert3.jpg',
+    description:
+      'A silky smooth dessert made with coconut milk and topped with a vibrant fresh mango coulis.',
+    image: 'https://unsplash.com/photos/a-bowl-of-soup-on-a-plate-with-a-spoon-E26vUSjIOlM',
     calories: 290,
     prepTime: '15 mins',
     cookTime: '5 mins',

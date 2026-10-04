@@ -1,9 +1,3 @@
-/**
- * Navbar Component
- * Primary navigation bar with responsive hamburger menu for mobile.
- * Features fixed positioning, backdrop blur glass effect, and active link highlighting.
- * Supports hash-based routing navigation.
- */
 import React, { useState, useEffect } from 'react';
 
 function Navbar({ activeSection }) {

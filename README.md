@@ -52,11 +52,10 @@ npm run dev
 
 ## Environment Variables
 
-This app reads recipe API credentials from environment variables using Vite.
-Copy `.env.example` to `.env` and keep your keys private.
+This app fetches recipes from the Tasty API through RapidAPI. Copy `.env.example` to `.env` and keep your key private.
 
-- `VITE_RECIPE_API_CLIENT_ID`
-- `VITE_RECIPE_API_CLIENT_SECRET`
+- `VITE_RAPIDAPI_KEY`
+- `VITE_RAPIDAPI_HOST` defaults to `tasty.p.rapidapi.com`
 
 ## Usage
 

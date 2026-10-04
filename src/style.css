@@ -659,6 +659,12 @@ select {
   margin-bottom: 20px;
 }
 
+.hero-subtitle {
+  max-width: 640px;
+  margin: 0 auto 46px;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  opacity: 0.92;
 }
 
 /* === Premium Page === */
@@ -931,8 +937,6 @@ select {
  .input-with-icon i,
  .newsletter-input-wrapper i {
   left: 14px;
-}
-  margin-bottom: 46px;
 }
 
 .hero-stats {
@@ -3948,4 +3952,3 @@ input[type='checkbox'] {
     margin-bottom: 6px;
   }
 }
-

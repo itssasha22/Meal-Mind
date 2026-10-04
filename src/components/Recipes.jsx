@@ -6,6 +6,7 @@
  */
 import React, { useState, useEffect } from 'react'
 import { ALL_RECIPES } from './RecipeDetail'
+import { fetchRecipesFromApi } from '../services/recipeApi'
 
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Desserts']
 
@@ -20,14 +21,37 @@ function Recipes() {
   const [activeTag, setActiveTag] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [apiNotice, setApiNotice] = useState('')
 
-  // Simulate API fetch
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setRecipes(ALL_RECIPES)
-      setLoading(false)
-    }, 700)
-    return () => clearTimeout(timer)
+    let cancelled = false
+
+    async function loadRecipes() {
+      setLoading(true)
+      setError(null)
+      setApiNotice('')
+
+      try {
+        const apiRecipes = await fetchRecipesFromApi('healthy')
+        if (!cancelled) {
+          const byId = new Map([...ALL_RECIPES, ...apiRecipes].map((recipe) => [recipe.id, recipe]))
+          setRecipes([...byId.values()])
+        }
+      } catch (err) {
+        console.warn('Recipe API unavailable, using local recipes:', err)
+        if (!cancelled) {
+          setRecipes(ALL_RECIPES)
+          setApiNotice(err.message || 'Recipe API unavailable. Showing saved recipes instead.')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    loadRecipes()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const toggleFavorite = (e, id) => {
@@ -101,7 +125,9 @@ function Recipes() {
             <i className="bi bi-book"></i>
           </div>
           <h2>Discover Recipes</h2>
-          <p>Browse our collection of {recipes.length}+ healthy, delicious recipes</p>
+          <p>
+            {apiNotice || `Browse our collection of ${recipes.length}+ healthy, delicious recipes`}
+          </p>
         </div>
 
         {/* Search Bar */}

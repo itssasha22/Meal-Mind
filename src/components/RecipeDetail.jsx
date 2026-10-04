@@ -5,6 +5,7 @@
  * Route: #recipe/:id
  */
 import React, { useState, useEffect } from 'react';
+import { getCachedApiRecipes, getPublicAsset } from '../services/recipeApi';
 
 const ALL_RECIPES = [
   {
@@ -283,7 +284,7 @@ const ALL_RECIPES = [
     title: 'Honey Roasted Mixed Nuts',
     description:
       'Crunchy, sweet, and salty roasted mixed nuts glazed with honey and warm spices — the perfect grab-and-go snack.',
-    image: 'https://unsplash.com/photos/a-mixture-of-nuts-and-raisins-on-a-plate-IUDpDbax7gQ',
+    image: getPublicAsset('images/snack1.jpg'),
     calories: 210,
     prepTime: '5 mins',
     cookTime: '15 mins',
@@ -315,7 +316,7 @@ const ALL_RECIPES = [
     title: 'Avocado & Veggie Rice Cakes',
     description:
       'Light and satisfying rice cakes topped with creamy avocado, cherry tomatoes, and everything bagel seasoning.',
-    image: 'https://unsplash.com/photos/sushi-on-white-ceramic-rectangular-plate-i4jrjvPQCXQ',
+    image: getPublicAsset('images/snack2.jpg'),
     calories: 180,
     prepTime: '8 mins',
     cookTime: '0 mins',
@@ -347,7 +348,7 @@ const ALL_RECIPES = [
     title: 'Greek Yogurt Parfait with Granola',
     description:
       'Creamy Greek yogurt layered with crunchy granola, fresh berries, and a drizzle of honey — ready in minutes.',
-    image: 'https://unsplash.com/photos/black-round-plate-with-red-and-white-berries-3Lsgd54dxRI',
+    image: getPublicAsset('images/snack3.jpg'),
     calories: 260,
     prepTime: '5 mins',
     cookTime: '0 mins',
@@ -380,8 +381,7 @@ const ALL_RECIPES = [
     title: 'Chocolate Lava Cake',
     description:
       'Indulgent individual chocolate cakes with a warm, gooey molten center — pure dessert perfection in under 20 minutes.',
-    image:
-      'https://unsplash.com/photos/a-white-plate-topped-with-a-piece-of-cake-and-ice-cream-PFG4JCWomIM',
+    image: getPublicAsset('images/dessert1.jpg'),
     calories: 420,
     prepTime: '10 mins',
     cookTime: '12 mins',
@@ -417,8 +417,7 @@ const ALL_RECIPES = [
     title: 'Strawberry Cheesecake Bites',
     description:
       'No-bake mini cheesecake bites with a buttery graham cracker base, creamy filling, and a fresh strawberry on top.',
-    image:
-      'https://unsplash.com/photos/delicious-cheesecake-slices-are-artfully-arranged-a1MLZOERzzk',
+    image: getPublicAsset('images/dessert2.jpg'),
     calories: 180,
     prepTime: '20 mins',
     cookTime: '0 mins',
@@ -452,7 +451,7 @@ const ALL_RECIPES = [
     title: 'Mango Coconut Panna Cotta',
     description:
       'A silky smooth dessert made with coconut milk and topped with a vibrant fresh mango coulis.',
-    image: 'https://unsplash.com/photos/a-bowl-of-soup-on-a-plate-with-a-spoon-E26vUSjIOlM',
+    image: getPublicAsset('images/dessert3.jpg'),
     calories: 290,
     prepTime: '15 mins',
     cookTime: '5 mins',
@@ -499,7 +498,8 @@ function RecipeDetail({ recipeId, onBack }) {
     setLoading(true);
     setError(null);
     const timer = setTimeout(() => {
-      const found = ALL_RECIPES.find((r) => r.id === parseInt(recipeId));
+      const allAvailableRecipes = [...ALL_RECIPES, ...getCachedApiRecipes()];
+      const found = allAvailableRecipes.find((r) => r.id === parseInt(recipeId));
       if (found) {
         setRecipe(found);
       } else {
@@ -549,6 +549,13 @@ function RecipeDetail({ recipeId, onBack }) {
   }
 
   const isFavorited = favorites.includes(recipe.id);
+  const relatedRecipes = [...ALL_RECIPES, ...getCachedApiRecipes()]
+    .filter(
+      (r) =>
+        r.id !== recipe.id &&
+        (r.tags || []).some((tag) => (recipe.tags || []).includes(tag))
+    )
+    .slice(0, 3);
 
   return (
     <section className="recipe-detail">
@@ -721,11 +728,7 @@ function RecipeDetail({ recipeId, onBack }) {
             <i className="bi bi-diagram-3"></i> You Might Also Like
           </h3>
           <div className="related-grid">
-            {ALL_RECIPES.filter(
-              (r) => r.id !== recipe.id && r.tags.some((t) => recipe.tags.includes(t))
-            )
-              .slice(0, 3)
-              .map((rel) => (
+            {relatedRecipes.map((rel) => (
                 <a key={rel.id} href={`#recipe${rel.id}`} className="related-card">
                   <div className="related-image">
                     <img

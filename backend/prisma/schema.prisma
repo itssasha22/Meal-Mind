@@ -1,0 +1,56 @@
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  password      String
+  age           Int?
+  weight        Float?
+  height        Float?
+  gender        String?
+  goal          String?
+  activityLevel String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  meals         MealLog[]
+  progress      Progress[]
+}
+
+model Food {
+  id          String   @id @default(cuid())
+  name        String
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  fiber       Float?
+  imageUrl    String?
+  barcode     String?  @unique
+  isVerified  Boolean  @default(false)
+}
+
+model MealLog {
+  id            String      @id @default(cuid())
+  userId        String
+  date          DateTime
+  mealType      String
+  foods         Json[]
+  totalCalories Float
+  totalProtein  Float
+  totalCarbs    Float
+  totalFat      Float
+
+  user          User        @relation(fields: [userId], references: [id])
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @default(now())
+  weight    Float?
+  bodyFat   Float?
+  mood      String?
+  notes     String?
+
+  user      User     @relation(fields: [userId], references: [id])
+}

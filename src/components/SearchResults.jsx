@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ALL_RECIPES } from './RecipeDetail';
+import { fetchRecipesFromApi } from '../services/recipeApi';
 
 const DIETARY_TAGS = [
   'All',
@@ -15,6 +16,7 @@ const DIETARY_TAGS = [
 function SearchResults({ query, onRecipeClick }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [apiNotice, setApiNotice] = useState('');
   const [activeTag, setActiveTag] = useState('All');
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('nutriplate-favorites');
@@ -24,13 +26,18 @@ function SearchResults({ query, onRecipeClick }) {
   useEffect(() => {
     if (!query || query.trim() === '') {
       setResults([]);
+      setApiNotice('');
       return;
     }
+
+    let cancelled = false;
     setLoading(true);
+    setApiNotice('');
     setActiveTag('All');
-    const timer = setTimeout(() => {
+
+    async function searchRecipes() {
       const q = query.toLowerCase();
-      const filtered = ALL_RECIPES.filter(
+      const localMatches = ALL_RECIPES.filter(
         (recipe) =>
           recipe.title.toLowerCase().includes(q) ||
           recipe.description.toLowerCase().includes(q) ||
@@ -38,10 +45,28 @@ function SearchResults({ query, onRecipeClick }) {
           recipe.tags.some((t) => t.toLowerCase().includes(q)) ||
           recipe.ingredients.some((i) => i.name.toLowerCase().includes(q))
       );
-      setResults(filtered);
-      setLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
+
+      try {
+        const apiMatches = await fetchRecipesFromApi(query, 18);
+        if (!cancelled) {
+          const byId = new Map([...apiMatches, ...localMatches].map((recipe) => [recipe.id, recipe]));
+          setResults([...byId.values()]);
+        }
+      } catch (err) {
+        console.warn('Recipe API search unavailable, using local search:', err);
+        if (!cancelled) {
+          setResults(localMatches);
+          setApiNotice(err.message || 'Recipe API unavailable. Showing saved recipe matches instead.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    searchRecipes();
+    return () => {
+      cancelled = true;
+    };
   }, [query]);
 
   const toggleFavorite = (e, id) => {
@@ -99,9 +124,10 @@ function SearchResults({ query, onRecipeClick }) {
           </div>
           <h2>Search Results</h2>
           <p>
-            {results.length > 0
+            {apiNotice ||
+            (results.length > 0
               ? `Found ${results.length} recipe${results.length !== 1 ? 's' : ''} for "${query}"`
-              : `No recipes found for "${query}"`}
+              : `No recipes found for "${query}"`)}
           </p>
         </div>
 
